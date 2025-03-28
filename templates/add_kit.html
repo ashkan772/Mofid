@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Add New Kit</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label for="name" class="form-label">Kit Name</label>
+        <input type="text" class="form-control" name="name" required>
+    </div>
+    <div class="mb-3">
+        <label for="barcode" class="form-label">Barcode</label>
+        <input type="text" class="form-control" name="barcode" required>
+    </div>
+    <button type="submit" class="btn btn-success">Add Kit</button>
+</form>
+{% endblock %}

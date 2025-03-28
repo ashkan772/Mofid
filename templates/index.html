@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Inventory</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Barcode</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for kit in kits %}
+        <tr>
+            <td>{{ kit.id }}</td>
+            <td>{{ kit.name }}</td>
+            <td>{{ kit.barcode }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{{ url_for('add_kit') }}" class="btn btn-primary">Add New Kit</a>
+{% endblock %}
