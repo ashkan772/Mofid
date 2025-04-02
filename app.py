@@ -49,16 +49,19 @@ def delete_kit(id):
     return redirect(url_for('index'))
 
 # Route to edit a kit
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
-def edit_kit(id):
-    kit = Kit.query.get_or_404(id)
+@app.route('/edit/<int:kit_id>', methods=['GET', 'POST'])
+def edit_kit(kit_id):
+    kit = Kit.query.get_or_404(kit_id)  # Fetch the kit or return 404
+
     if request.method == 'POST':
         kit.name = request.form['name']
         kit.barcode = request.form['barcode']
-        kit.quantity = int(request.form['quantity'])
+        kit.quantity = int(request.form['quantity'])  # Ensure integer conversion
         db.session.commit()
         return redirect(url_for('index'))
+
     return render_template('edit_kit.html', kit=kit)
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
