@@ -5,12 +5,15 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import InputRequired, Length, ValidationError
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_migrate import Migrate
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
@@ -19,6 +22,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
 class Kit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -43,18 +47,22 @@ class LoginForm(FlaskForm):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @app.route('/register', methods=['GET', 'POST'])
+@login_required
 def register():
+    if not current_user.is_admin:
+        flash('Only an admin can register new users.', 'danger')
+        return redirect(url_for('index'))
     form = RegisterForm()
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
         new_user = User(username=form.username.data, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
-        flash('Registration successful! You can now log in.', 'success')
-        return redirect(url_for('login'))
+        flash('User registered successfully!', 'success')
+        return redirect(url_for('index'))
     return render_template('register.html', form=form)
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -69,6 +77,7 @@ def login():
     return render_template('login.html', form=form)
 
 @app.route('/logout')
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('index'))
@@ -91,33 +100,13 @@ def add_kit():
         return redirect(url_for('index'))
     return render_template('add_kit.html')
 
-@app.route('/edit/<int:kit_id>', methods=['GET', 'POST'])
-@login_required
-def edit_kit(kit_id):
-    kit = Kit.query.get_or_404(kit_id)
-    
-    if request.method == 'POST':
-        kit.name = request.form['name']
-        kit.barcode = request.form['barcode']
-        kit.quantity = int(request.form['quantity'])
-        db.session.commit()
-        flash('Kit updated successfully!', 'success')
-        return redirect(url_for('index'))
-    
-    return render_template('edit_kit.html', kit=kit)
-
-@app.route('/delete/<int:kit_id>', methods=['GET', 'POST'])
-@login_required
-def delete_kit(kit_id):
-    kit = Kit.query.get_or_404(kit_id)
-    db.session.delete(kit)
-    db.session.commit()
-    flash('Kit deleted successfully!', 'success')
-    return redirect(url_for('index'))
-
-
-import os
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        # Ensure an admin user exists
+        if not User.query.filter_by(username='admin').first():
+            hashed_password = generate_password_hash('adminpassword', method='pbkdf2:sha256')
+            admin_user = User(username='admin', password=hashed_password, is_admin=True)
+            db.session.add(admin_user)
+            db.session.commit()
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
