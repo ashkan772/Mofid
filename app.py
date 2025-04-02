@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///inventory.db'
@@ -12,6 +13,7 @@ class Kit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     barcode = db.Column(db.String(50), unique=True, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)  # Added quantity field
 
 # Create database tables
 with app.app_context():
@@ -29,15 +31,34 @@ def add_kit():
     if request.method == 'POST':
         name = request.form['name']
         barcode = request.form['barcode']
-        new_kit = Kit(name=name, barcode=barcode)
+        quantity = int(request.form['quantity'])  # Get quantity from form
+
+        new_kit = Kit(name=name, barcode=barcode, quantity=quantity)
         db.session.add(new_kit)
         db.session.commit()
         return redirect(url_for('index'))
+
     return render_template('add_kit.html')
 
+# Route to delete a kit
+@app.route('/delete/<int:id>')
+def delete_kit(id):
+    kit = Kit.query.get_or_404(id)
+    db.session.delete(kit)
+    db.session.commit()
+    return redirect(url_for('index'))
 
-import os
+# Route to edit a kit
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit_kit(id):
+    kit = Kit.query.get_or_404(id)
+    if request.method == 'POST':
+        kit.name = request.form['name']
+        kit.barcode = request.form['barcode']
+        kit.quantity = int(request.form['quantity'])
+        db.session.commit()
+        return redirect(url_for('index'))
+    return render_template('edit_kit.html', kit=kit)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
