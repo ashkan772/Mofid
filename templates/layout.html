@@ -1,0 +1,43 @@
+```html
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lab Inventory{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Lab Inventory</a>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('add_kit') }}">Add Kit</a></li>
+                    {% if current_user.username == 'ashkan' %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register User</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('manage_users') }}">Users</a></li>
+                    {% endif %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('change_password') }}">Change Password</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</div>
+</body>
+</html>
+```
